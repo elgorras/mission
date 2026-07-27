@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#05070d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Protocolo 2907</title>
+
+  <style>
+    :root {
+      --red: #ff3045;
+      --blue: #3478f6;
+      --cyan: #72d8ff;
+      --ink: #05070d;
+      --panel: rgba(12, 18, 34, .91);
+      --line: rgba(255,255,255,.13);
+      --white: #f8f9ff;
+      --muted: #abb5d0;
+      --green: #6fffb0;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      min-height: 100%;
+      margin: 0;
+      background: var(--ink);
+      overscroll-behavior: none;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      margin: 0;
+      overflow-x: hidden;
+      color: var(--white);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 14% 15%, rgba(52,120,246,.28), transparent 30%),
+        radial-gradient(circle at 90% 17%, rgba(255,48,69,.22), transparent 29%),
+        radial-gradient(circle at 50% 110%, rgba(118,54,255,.16), transparent 36%),
+        linear-gradient(180deg, #07101f, #05070d 70%);
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: .12;
+      background-image:
+        linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px);
+      background-size: 38px 38px;
+      mask-image: linear-gradient(to bottom, #000, transparent 90%);
+    }
+
+    .scanline {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      pointer-events: none;
+      opacity: .045;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 3px,
+        rgba(255,255,255,.65) 4px
+      );
+    }
+
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(10px);
+      pointer-events: none;
+      opacity: .22;
+      animation: drift 8s ease-in-out infinite alternate;
+    }
+
+    .orb.one {
+      width: 250px;
+      height: 250px;
+      left: -100px;
+      top: 15%;
+      background: var(--blue);
+    }
+
+    .orb.two {
+      width: 220px;
+      height: 220px;
+      right: -90px;
+      top: 35%;
+      background: var(--red);
+      animation-delay: -3s;
+    }
+
+    @keyframes drift {
+      from { transform: translate3d(0,0,0) scale(1); }
+      to { transform: translate3d(20px,-28px,0) scale(1.08); }
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding:
+        max(18px, env(safe-area-inset-top))
+        15px
+        max(22px, env(safe-area-inset-bottom));
+      display: grid;
+      place-items: center;
+    }
+
+    .shell {
+      width: min(780px, 100%);
+      min-height: min(760px, calc(100dvh - 36px));
+      display: grid;
+      align-content: center;
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      background:
+        linear-gradient(180deg, rgba(17,25,47,.94), rgba(7,10,20,.97)),
+        rgba(5,7,13,.9);
+      box-shadow:
+        0 34px 110px rgba(0,0,0,.56),
+        inset 0 1px 0 rgba(255,255,255,.07);
+      overflow: hidden;
+      position: relative;
+      backdrop-filter: blur(16px);
+    }
+
+    .shell::before,
+    .shell::after {
+      content: "";
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 50%;
+    }
+
+    .shell::before {
+      left: -130px;
+      top: -120px;
+    }
+
+    .shell::after {
+      right: -130px;
+      bottom: -130px;
+    }
+
+    .topbar {
+      position: absolute;
+      inset: 0 0 auto;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 22px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      font-size: 10px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: #929db9;
+      z-index: 2;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      margin-right: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 16px rgba(111,255,176,.8);
+    }
+
+    .screen {
+      display: none;
+      width: 100%;
+      padding: 84px clamp(22px, 7vw, 70px) 48px;
+      text-align: center;
+      animation: fadeUp .65s ease both;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .kicker {
+      margin-bottom: 20px;
+      color: #c6cee5;
+      font-size: 12px;
+      letter-spacing: .24em;
+      text-transform: uppercase;
+    }
+
+    .classified {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 22px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255,48,69,.3);
+      border-radius: 999px;
+      background: rgba(255,48,69,.09);
+      color: #ff9da8;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+
+    h1, h2 {
+      margin: 0;
+      line-height: .98;
+      letter-spacing: -.05em;
+    }
+
+    h1 {
+      font-size: clamp(46px, 10vw, 86px);
+    }
+
+    h2 {
+      font-size: clamp(38px, 8vw, 68px);
+    }
+
+    .gradient {
+      background: linear-gradient(90deg, #fff 0%, #93baff 46%, #ff7e8d 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .lead {
+      max-width: 580px;
+      margin: 26px auto 0;
+      color: var(--muted);
+      font-size: clamp(17px, 3.3vw, 22px);
+      line-height: 1.65;
+    }
+
+    .primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-width: min(330px, 100%);
+      margin-top: 34px;
+      padding: 17px 25px;
+      border: 0;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 850;
+      cursor: pointer;
+      touch-action: manipulation;
+      background: linear-gradient(90deg, var(--blue), var(--red));
+      box-shadow: 0 15px 42px rgba(52,120,246,.28);
+      transition: transform .2s ease, filter .2s ease;
+    }
+
+    .primary:active {
+      transform: scale(.98);
+    }
+
+    .primary:hover {
+      filter: brightness(1.07);
+    }
+
+    .fine {
+      margin-top: 18px;
+      color: #79839f;
+      font-size: 12px;
+      letter-spacing: .08em;
+    }
+
+    .scanner {
+      width: min(390px, 100%);
+      margin: 34px auto 0;
+      padding: 22px;
+      border: 1px solid rgba(114,216,255,.19);
+      border-radius: 24px;
+      background: rgba(7,14,27,.68);
+      text-align: left;
+    }
+
+    .scanner-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #b6c4df;
+      font-size: 11px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .progress {
+      height: 9px;
+      margin-top: 20px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255,255,255,.07);
+    }
+
+    .progress > span {
+      display: block;
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--cyan), var(--blue), var(--red));
+      box-shadow: 0 0 18px rgba(114,216,255,.55);
+    }
+
+    .loading .progress > span {
+      animation: load 2.25s cubic-bezier(.2,.8,.2,1) forwards;
+    }
+
+    @keyframes load {
+      0% { width: 0; }
+      22% { width: 19%; }
+      52% { width: 57%; }
+      79% { width: 82%; }
+      100% { width: 100%; }
+    }
+
+    .logs {
+      margin-top: 20px;
+      min-height: 105px;
+      color: #8fa2c5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .log {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+
+    .loading .log:nth-child(1) { animation: logIn .3s .2s forwards; }
+    .loading .log:nth-child(2) { animation: logIn .3s .7s forwards; }
+    .loading .log:nth-child(3) { animation: logIn .3s 1.25s forwards; }
+    .loading .log:nth-child(4) { animation: logIn .3s 1.85s forwards; color: var(--green); }
+
+    @keyframes logIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .mission-card {
+      max-width: 620px;
+      margin: 32px auto 0;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 26px;
+      background:
+        linear-gradient(135deg, rgba(52,120,246,.14), rgba(255,48,69,.12)),
+        rgba(255,255,255,.035);
+      text-align: left;
+    }
+
+    .mission-head {
+      padding: 27px;
+      border-bottom: 1px dashed rgba(255,255,255,.2);
+      text-align: center;
+    }
+
+    .mission-code {
+      color: #8996b6;
+      font-size: 11px;
+      letter-spacing: .19em;
+      text-transform: uppercase;
+    }
+
+    .film {
+      margin-top: 12px;
+      font-size: clamp(30px, 7vw, 48px);
+      font-weight: 900;
+      line-height: 1.04;
+      letter-spacing: -.04em;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 8px 11px;
+      border-radius: 999px;
+      color: #ff9fa9;
+      background: rgba(255,48,69,.13);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .mission-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: rgba(255,255,255,.09);
+    }
+
+    .data {
+      padding: 18px 14px;
+      background: rgba(5,8,16,.88);
+      text-align: center;
+    }
+
+    .data small {
+      display: block;
+      margin-bottom: 6px;
+      color: #818ca9;
+      font-size: 10px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+
+    .data strong {
+      font-size: 16px;
+    }
+
+    .brief {
+      padding: 25px;
+      color: #dfe5f6;
+      font-size: 17px;
+      line-height: 1.7;
+    }
+
+    .brief strong {
+      color: #fff;
+    }
+
+    .accept {
+      width: calc(100% - 50px);
+      margin: 0 25px 25px;
+    }
+
+    .confirmed {
+      display: none;
+      margin: 24px 0 0;
+      color: var(--green);
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: .03em;
+      animation: fadeUp .5s ease both;
+    }
+
+    .confetti {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      pointer-events: none;
+    }
+
+    .piece {
+      position: absolute;
+      top: -30px;
+      animation: fall 2.6s ease forwards;
+    }
+
+    @keyframes fall {
+      0% { opacity: 0; transform: translateY(-20px) rotate(0deg); }
+      15% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(105vh) rotate(600deg); }
+    }
+
+    @media (max-width: 620px) {
+      .shell {
+        min-height: calc(100dvh - 32px);
+        border-radius: 24px;
+      }
+
+      .screen {
+        padding: 76px 19px 34px;
+      }
+
+      .topbar {
+        padding: 0 16px;
+      }
+
+      .mission-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .data {
+        padding: 14px;
+      }
+
+      .brief {
+        padding: 22px 19px;
+        font-size: 16px;
+      }
+
+      .accept {
+        width: calc(100% - 38px);
+        margin: 0 19px 20px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="scanline"></div>
+  <div class="orb one"></div>
+  <div class="orb two"></div>
+  <div class="confetti" id="confetti"></div>
+
+  <main>
+    <section class="shell">
+      <div class="topbar">
+        <span><span class="status-dot"></span>Sistema operativo</span>
+        <span>Protocolo 2907</span>
+      </div>
+
+      <section class="screen active" id="screen-access">
+        <div class="classified">⚠ Acceso restringido</div>
+        <div class="kicker">Canal cifrado · Nivel confidencial</div>
+
+        <h1>
+          Tienes un<br>
+          <span class="gradient">mensaje secreto</span>
+        </h1>
+
+        <p class="lead">
+          Se ha detectado una misión asignada exclusivamente a ti.
+          Para conocer los detalles, debes iniciar el protocolo.
+        </p>
+
+        <button class="primary" id="start-button">
+          Iniciar protocolo
+          <span>→</span>
+        </button>
+
+        <div class="fine">La identidad del destinatario será verificada.</div>
+      </section>
+
+      <section class="screen" id="screen-scan">
+        <div class="kicker">Verificación en curso</div>
+
+        <h2>
+          Confirmando<br>
+          <span class="gradient">tu identidad</span>
+        </h2>
+
+        <div class="scanner" id="scanner">
+          <div class="scanner-title">
+            <span>Escaneo de acceso</span>
+            <span id="percent">0%</span>
+          </div>
+
+          <div class="progress"><span></span></div>
+
+          <div class="logs">
+            <div class="log">› Conectando con el canal seguro…</div>
+            <div class="log">› Analizando credenciales del agente…</div>
+            <div class="log">› Descifrando archivo confidencial…</div>
+            <div class="log">✓ Identidad confirmada. Acceso concedido.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-invite">
+        <div class="kicker">Transmisión recibida</div>
+
+        <h2>
+          Reserva la tarde<br>
+          <span class="gradient">del miércoles</span>
+        </h2>
+
+        <p class="lead">Tenemos una misión pendiente. 🕷️</p>
+
+        <button class="primary" id="unlock-button">
+          Desbloquear misión
+          <span>↓</span>
+        </button>
+
+        <div class="mission-card" id="mission-card" hidden>
+          <div class="mission-head">
+            <div class="mission-code">Misión #2907 · Desbloqueada</div>
+
+            <div class="film">
+              Spider-Man:<br>
+              <span class="gradient">Brand New Day</span>
+            </div>
+
+            <span class="badge">Estreno confirmado</span>
+          </div>
+
+          <div class="mission-grid">
+            <div class="data">
+              <small>Fecha</small>
+              <strong>Miércoles 29</strong>
+            </div>
+
+            <div class="data">
+              <small>Hora</small>
+              <strong>21:40</strong>
+            </div>
+
+            <div class="data">
+              <small>Estado</small>
+              <strong>Confirmada ✓</strong>
+            </div>
+          </div>
+
+          <div class="brief">
+            <strong>Objetivo:</strong> asistir juntos al estreno de Spider-Man.<br>
+            <strong>Agente asignada:</strong> tú ❤️<br>
+            <strong>Compañero de misión:</strong> Jorge 🕷️<br><br>
+            La misión está preparada. Solo tienes que reservar la tarde.
+          </div>
+
+          <button class="primary accept" id="accept-button">
+            Aceptar misión ❤️
+          </button>
+        </div>
+
+        <div class="confirmed" id="confirmed">
+          ✓ Misión aceptada. Nos vemos el miércoles.
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const access = document.getElementById("screen-access");
+    const scan = document.getElementById("screen-scan");
+    const invite = document.getElementById("screen-invite");
+    const scanner = document.getElementById("scanner");
+    const percent = document.getElementById("percent");
+    const missionCard = document.getElementById("mission-card");
+    const confirmed = document.getElementById("confirmed");
+
+    function showScreen(from, to) {
+      from.classList.remove("active");
+      to.classList.add("active");
+    }
+
+    document.getElementById("start-button").addEventListener("click", () => {
+      showScreen(access, scan);
+      scanner.classList.add("loading");
+
+      let value = 0;
+      const interval = setInterval(() => {
+        value += Math.floor(Math.random() * 9) + 3;
+        if (value >= 100) {
+          value = 100;
+          clearInterval(interval);
+        }
+        percent.textContent = value + "%";
+      }, 130);
+
+      setTimeout(() => {
+        showScreen(scan, invite);
+      }, 2700);
+    });
+
+    document.getElementById("unlock-button").addEventListener("click", (event) => {
+      event.currentTarget.style.display = "none";
+      missionCard.hidden = false;
+      missionCard.style.animation = "fadeUp .65s ease both";
+
+      setTimeout(() => {
+        missionCard.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 150);
+    });
+
+    document.getElementById("accept-button").addEventListener("click", (event) => {
+      event.currentTarget.style.display = "none";
+      confirmed.style.display = "block";
+      celebrate();
+    });
+
+    function celebrate() {
+      const container = document.getElementById("confetti");
+      const symbols = ["🕷️", "❤️", "✨", "🎬"];
+
+      for (let i = 0; i < 42; i++) {
+        const piece = document.createElement("span");
+        piece.className = "piece";
+        piece.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        piece.style.left = Math.random() * 100 + "vw";
+        piece.style.fontSize = (13 + Math.random() * 18) + "px";
+        piece.style.animationDelay = Math.random() * .75 + "s";
+        container.appendChild(piece);
+
+        setTimeout(() => piece.remove(), 3400);
+      }
+    }
+  </script>
+</body>
+</html>
